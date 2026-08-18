@@ -56,7 +56,7 @@ const resetDynamicLayout = (): void => {
   }
 };
 const setTitle = () => {
-  let title = 'freqUI';
+  let title = 'noches';
   if (settingsStore.openTradesInTitle === OpenTradeVizOptions.asTitle) {
     title = `(${botStore.activeBot?.openTradeCount}) ${title}`;
   }
@@ -286,7 +286,7 @@ function editBotLogin(botId: string) {
             <UDropdownMenu :items="menuItems" size="lg">
               <UButton color="neutral" variant="ghost" size="sm" trailing-icon="mdi:chevron-down">
                 <div class="flex items-center">
-                  <UAvatar size="sm"> FT </UAvatar>
+                  <UAvatar size="sm"> nb </UAvatar>
                 </div>
               </UButton>
             </UDropdownMenu>

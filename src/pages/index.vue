@@ -12,25 +12,24 @@ definePage({
       <BotList class="max-w-xl" />
     </div>
     <USeparator class="my-5" />
-    <AppIcon class="my-5 sm:w-80 sm:h-80 w-64 h-64" />
+    <AppIcon class="my-5 h-64 w-64 sm:h-80 sm:w-80" />
 
-    <h1 class="font-bold text-2xl sm:text-4xl mb-4 transition-all">
-      Welcome to the <AppText class="text-2xl! sm:text-4xl!" />
+    <h1 class="mb-4 text-2xl font-bold sm:text-4xl">
+      <AppText full class="text-2xl! sm:text-4xl!" />
     </h1>
-    <div>This page allows you to control your trading bot.</div>
+    <p>Select a bot to monitor its trades, charts and performance.</p>
     <USeparator class="my-5" />
-    <p class="mb-2">
-      If you need any help, please refer to the
+
+    <p class="text-sm text-neutral-500 dark:text-neutral-400">
+      Runs on the Freqtrade engine -
       <a
-        class="text-primary underline cursor-pointer"
+        class="text-primary cursor-pointer underline"
         href="https://www.freqtrade.io/en/latest/"
         target="_blank"
+        rel="noopener"
       >
-        Freqtrade Documentation
-      </a>
-      .
+        engine documentation</a
+      >.
     </p>
-
-    <p class="mb-5">Have fun - <i>wishes you the Freqtrade team</i></p>
   </div>
 </template>

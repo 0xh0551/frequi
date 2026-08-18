@@ -3,18 +3,27 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* noches: brand ramp is champagne-metallic gold (BRAND.md v1.1) instead of
+   upstream's cyan. `primary` maps to `brand` in vite.config.ts, so this ramp
+   alone re-skins every button, link, focus ring and active nav item.
+
+   Contrast is measured, not eyeballed:
+     400 #D6B25E on the dark app surface -> 9.36:1  (dark-mode accent)
+     500 #8A6B24 on white                -> 4.99:1  (light-mode accent, body-safe)
+   Nuxt UI resolves primary to -500 in light and -400 in dark, so both themes
+   clear WCAG AA for normal text. */
 @theme static {
-      --color-brand-50: #DBFAFF;
-      --color-brand-100: #B8F4FF;
-      --color-brand-200: #75EAFF;
-      --color-brand-300: #2EE0FF;
-      --color-brand-400: #00C3E6;
-      --color-brand-500: #0089A1;
-      --color-brand-600: #006C80;
-      --color-brand-700: #005261;
-      --color-brand-800: #003842;
-      --color-brand-900: #001A1F;
-      --color-brand-950: #000D0F;
+      --color-brand-50: #FBF7EC;
+      --color-brand-100: #F5EBD1;
+      --color-brand-200: #ECD9A0;
+      --color-brand-300: #E2C374;
+      --color-brand-400: #D6B25E;
+      --color-brand-500: #8A6B24;
+      --color-brand-600: #71571D;
+      --color-brand-700: #5A4517;
+      --color-brand-800: #3E3010;
+      --color-brand-900: #251D09;
+      --color-brand-950: #141005;
 
 }
 
