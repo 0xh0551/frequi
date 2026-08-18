@@ -12,7 +12,7 @@ definePage({
       <BotList class="max-w-xl" />
     </div>
     <USeparator class="my-5" />
-    <AppIcon class="my-5 h-64 w-64 sm:h-80 sm:w-80" />
+    <AppIcon class="mx-auto my-5 block h-64 w-64 sm:h-80 sm:w-80" />
 
     <h1 class="mb-4 text-2xl font-bold sm:text-4xl">
       <AppText full class="text-2xl! sm:text-4xl!" />

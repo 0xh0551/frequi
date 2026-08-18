@@ -11,7 +11,11 @@
      400 #D6B25E on the dark app surface -> 9.36:1  (dark-mode accent)
      500 #8A6B24 on white                -> 4.99:1  (light-mode accent, body-safe)
    Nuxt UI resolves primary to -500 in light and -400 in dark, so both themes
-   clear WCAG AA for normal text. */
+   clear WCAG AA for normal text.
+
+   800-950 are deliberately low-chroma: they are used as surface fills
+   (bg-primary-800 marks the selected bot), and a saturated gold at that
+   lightness reads as mud rather than as a tinted neutral. */
 @theme static {
       --color-brand-50: #FBF7EC;
       --color-brand-100: #F5EBD1;
@@ -21,9 +25,9 @@
       --color-brand-500: #8A6B24;
       --color-brand-600: #71571D;
       --color-brand-700: #5A4517;
-      --color-brand-800: #3E3010;
-      --color-brand-900: #251D09;
-      --color-brand-950: #141005;
+      --color-brand-800: #2E2820;
+      --color-brand-900: #1F1B15;
+      --color-brand-950: #12100B;
 
 }
 
