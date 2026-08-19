@@ -1,9 +1,24 @@
 <script setup lang="ts">
 import { summarizeExcursions } from '@/utils/mfe';
+import {
+  underwaterSeries,
+  exitReasonStats,
+  directionStats,
+  durationStats,
+  entryHourStats,
+} from '@/utils/tradeAnalytics';
 
 const botStore = useBotStore();
 
-const summary = computed(() => summarizeExcursions(botStore.activeBot?.closedTrades ?? []));
+const closedTrades = computed(() => botStore.activeBot?.closedTrades ?? []);
+const stakeCurrency = computed(() => botStore.activeBot?.stakeCurrency || 'USDT');
+
+const summary = computed(() => summarizeExcursions(closedTrades.value));
+const underwater = computed(() => underwaterSeries(closedTrades.value));
+const byExitReason = computed(() => exitReasonStats(closedTrades.value));
+const byDirection = computed(() => directionStats(closedTrades.value));
+const byDuration = computed(() => durationStats(closedTrades.value));
+const byEntryHour = computed(() => entryHourStats(closedTrades.value));
 
 const asPercent = (value: number | null, digits = 1) =>
   value === null ? '—' : `${(value * 100).toFixed(digits)}%`;
@@ -49,6 +64,35 @@ const tiles = computed(() => [
   },
 ]);
 
+const formatHold = (hours: number | null) => {
+  if (hours === null) return '—';
+  return hours >= 48 ? `${(hours / 24).toFixed(1)}d` : `${hours.toFixed(1)}h`;
+};
+
+const directionTiles = computed(() =>
+  byDirection.value.map((stat) => ({
+    ...stat,
+    rows: [
+      ['Trades', `${stat.count}`],
+      ['Net', `${stat.netAbs.toFixed(2)} ${stakeCurrency.value}`],
+      ['Win rate', asPercent(stat.winRate, 0)],
+      ['MFE capture', asPercent(stat.capture, 0)],
+      ['Avg hold', formatHold(stat.avgDurationH)],
+    ] as [string, string][],
+  })),
+);
+
+const maxDrawdownLabel = computed(() => {
+  if (underwater.value.maxDrawdown >= 0) return null;
+  const span =
+    underwater.value.maxDrawdownStart !== null && underwater.value.maxDrawdownEnd !== null
+      ? ` (${timestampms(underwater.value.maxDrawdownStart)} → ${timestampms(
+          underwater.value.maxDrawdownEnd,
+        )})`
+      : '';
+  return `${underwater.value.maxDrawdown.toFixed(2)} ${stakeCurrency.value}${span}`;
+});
+
 onMounted(() => {
   botStore.activeBot?.getTrades();
 });
@@ -63,6 +107,7 @@ onMounted(() => {
       </p>
     </header>
 
+    <!-- ── Capture ──────────────────────────────────────────────────── -->
     <section
       class="mb-4 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800"
       aria-labelledby="capture-headline"
@@ -94,7 +139,7 @@ onMounted(() => {
       </div>
     </section>
 
-    <section class="rounded-lg border border-neutral-200 p-2 dark:border-neutral-800">
+    <section class="mb-4 rounded-lg border border-neutral-200 p-2 dark:border-neutral-800">
       <div class="h-[420px] w-full">
         <MfeCaptureChart :excursions="summary.trades" :show-title="false" />
       </div>
@@ -103,6 +148,91 @@ onMounted(() => {
         sits below it, the more of the move was given back. Figures are price moves, so leverage and
         fees do not distort the comparison.
       </p>
+    </section>
+
+    <!-- ── Drawdown ─────────────────────────────────────────────────── -->
+    <section class="mb-4 rounded-lg border border-neutral-200 p-2 dark:border-neutral-800">
+      <div class="flex flex-wrap items-baseline justify-between gap-2 px-2 pt-1">
+        <h2 class="font-semibold">Drawdown</h2>
+        <p v-if="maxDrawdownLabel" class="text-sm text-neutral-500 dark:text-neutral-400">
+          Deepest: <span class="tabular-nums">{{ maxDrawdownLabel }}</span>
+        </p>
+      </div>
+      <div class="h-[260px] w-full">
+        <UnderwaterChart :series="underwater" :stake-currency="stakeCurrency" :show-title="false" />
+      </div>
+      <p class="px-2 pb-1 text-xs text-neutral-500 dark:text-neutral-400">
+        Realised profit's distance below its own best point, in {{ stakeCurrency }}. Long red
+        stretches mean the bot spends its life recovering rather than compounding.
+      </p>
+    </section>
+
+    <!-- ── Exit mix ─────────────────────────────────────────────────── -->
+    <section class="mb-4 rounded-lg border border-neutral-200 p-2 dark:border-neutral-800">
+      <h2 class="px-2 pt-1 font-semibold">Net profit by exit reason</h2>
+      <div class="h-[280px] w-full">
+        <GroupStatChart
+          :stats="byExitReason"
+          :stake-currency="stakeCurrency"
+          show-counts
+          rotate-labels
+        />
+      </div>
+      <p class="px-2 pb-1 text-xs text-neutral-500 dark:text-neutral-400">
+        Which exits earn and which ones bleed. Hover a bar for win rate, average profit and how much
+        of the favourable move that exit type captures.
+      </p>
+    </section>
+
+    <!-- ── Behaviour ────────────────────────────────────────────────── -->
+    <section class="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div class="rounded-lg border border-neutral-200 p-2 dark:border-neutral-800">
+        <h2 class="px-2 pt-1 font-semibold">Net profit by holding time</h2>
+        <div class="h-[240px] w-full">
+          <GroupStatChart :stats="byDuration" :stake-currency="stakeCurrency" show-counts />
+        </div>
+        <p class="px-2 pb-1 text-xs text-neutral-500 dark:text-neutral-400">
+          Where the money is made across hold durations — and where trades go to die.
+        </p>
+      </div>
+      <div class="rounded-lg border border-neutral-200 p-2 dark:border-neutral-800">
+        <h2 class="px-2 pt-1 font-semibold">Net profit by entry hour (UTC)</h2>
+        <div class="h-[240px] w-full">
+          <GroupStatChart :stats="byEntryHour" :stake-currency="stakeCurrency" />
+        </div>
+        <p class="px-2 pb-1 text-xs text-neutral-500 dark:text-neutral-400">
+          The entry-timing fingerprint. Consistent red hours are a session the strategy should
+          probably sit out.
+        </p>
+      </div>
+    </section>
+
+    <!-- ── Direction ────────────────────────────────────────────────── -->
+    <section class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div
+        v-for="stat in directionTiles"
+        :key="stat.key"
+        class="rounded-lg border border-neutral-200 p-3 dark:border-neutral-800"
+      >
+        <div class="mb-2 flex items-baseline justify-between">
+          <h2 class="font-semibold">{{ stat.label }}</h2>
+          <span
+            class="text-lg font-semibold tabular-nums"
+            :style="{ color: stat.netAbs >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' }"
+          >
+            {{ stat.netAbs >= 0 ? '+' : '' }}{{ stat.netAbs.toFixed(2) }} {{ stakeCurrency }}
+          </span>
+        </div>
+        <dl v-if="stat.count > 0" class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+          <template v-for="[label, value] in stat.rows" :key="label">
+            <dt class="text-neutral-500 dark:text-neutral-400">{{ label }}</dt>
+            <dd class="text-end tabular-nums">{{ value }}</dd>
+          </template>
+        </dl>
+        <p v-else class="text-sm text-neutral-500 dark:text-neutral-400">
+          No {{ stat.label.toLowerCase() }} trades yet.
+        </p>
+      </div>
     </section>
   </div>
 </template>
