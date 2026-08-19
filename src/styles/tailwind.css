@@ -3,31 +3,36 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* noches: brand ramp is champagne-metallic gold (BRAND.md v1.1) instead of
+/* noches: brand ramp is deep cobalt (mark palette "COBALT & PEACH") instead of
    upstream's cyan. `primary` maps to `brand` in vite.config.ts, so this ramp
-   alone re-skins every button, link, focus ring and active nav item.
+   alone re-skins every button, link, focus ring and active nav item, and keeps
+   the "noches" wordmark in step with the mark beside it.
 
    Contrast is measured, not eyeballed:
-     400 #D6B25E on the dark app surface -> 9.36:1  (dark-mode accent)
-     500 #8A6B24 on white                -> 4.99:1  (light-mode accent, body-safe)
+     400 #9BB6FF on the dark app surface -> 9.49:1  (dark-mode accent)
+     500 #1B3A8F on white                -> 10.25:1 (light-mode accent, body-safe)
    Nuxt UI resolves primary to -500 in light and -400 in dark, so both themes
    clear WCAG AA for normal text.
 
+   The peach that carries the mark's smile and winking eye deliberately does
+   NOT live here: it is a logo colour, not a UI accent, and stays scoped to
+   AppIcon.vue.
+
    800-950 are deliberately low-chroma: they are used as surface fills
-   (bg-primary-800 marks the selected bot), and a saturated gold at that
-   lightness reads as mud rather than as a tinted neutral. */
+   (bg-primary-800 marks the selected bot), and a saturated blue at that
+   lightness reads as a glare rather than as a tinted neutral. */
 @theme static {
-      --color-brand-50: #FBF7EC;
-      --color-brand-100: #F5EBD1;
-      --color-brand-200: #ECD9A0;
-      --color-brand-300: #E2C374;
-      --color-brand-400: #D6B25E;
-      --color-brand-500: #8A6B24;
-      --color-brand-600: #71571D;
-      --color-brand-700: #5A4517;
-      --color-brand-800: #2E2820;
-      --color-brand-900: #1F1B15;
-      --color-brand-950: #12100B;
+      --color-brand-50: #F2F6FF;
+      --color-brand-100: #E2EBFE;
+      --color-brand-200: #C8D8FD;
+      --color-brand-300: #B2C6FB;
+      --color-brand-400: #9BB6FF;
+      --color-brand-500: #1B3A8F;
+      --color-brand-600: #16307A;
+      --color-brand-700: #112563;
+      --color-brand-800: #1B2133;
+      --color-brand-900: #131826;
+      --color-brand-950: #0B0E18;
 
 }
 

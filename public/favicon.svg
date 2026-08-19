@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="344.75 246.94 312 312" role="img" aria-label="noches">
+  <style>
+    .b{fill:#1B3A8F} .a{fill:#FFAE85} .s{stroke:#FFAE85}
+    @media (prefers-color-scheme: dark){ .b{fill:#3A62D8} .a{fill:#FFC9A8} .s{stroke:#FFC9A8} }
+  </style>
+  <rect class="b" x="352.79" y="257.15" width="295.92" height="291.57" rx="74"/>
+  <circle class="a" cx="447" cy="372" r="37"/>
+  <circle class="a" cx="555" cy="372" r="37"/>
+  <path class="s" d="M424 464 Q497 512 578 436" fill="none" stroke-width="26" stroke-linecap="round"/>
+</svg>
