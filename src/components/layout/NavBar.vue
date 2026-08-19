@@ -127,6 +127,12 @@ const navItems = computed<NavItem[]>(() => [
     icon: 'i-mdi-format-list-bulleted',
   },
   {
+    label: 'Analytics',
+    to: '/analytics',
+    visible: !botStore.canRunBacktest,
+    icon: 'i-mdi-chart-scatter-plot',
+  },
+  {
     label: 'Settings',
     to: '/settings',
     mobileOnly: true,
