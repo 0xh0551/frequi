@@ -6,6 +6,16 @@
 // scripts/publish_embargo_ui.py drops /embargo_state.json next to this build every
 // 5 min (same pattern as agent_exits.json); freqtrade serves any file in the
 // installed-UI dir, so a plain fetch works on every bot.
+interface EmbargoCf {
+  cf_pnl: number | null;
+  n_cf_trades: number | null;
+  n_vetoed_signals: number | null;
+  actual_pnl: number | null;
+  embargo_benefit: number | null;
+  cf_by_bot: Record<string, number>;
+  uncovered_bots: string[];
+  sources: { shadow?: number; log?: number };
+}
 interface EmbargoHistory {
   since: string | null;
   until: string | null;
@@ -13,6 +23,7 @@ interface EmbargoHistory {
   trades_opened_during: number | null;
   floor_trades_during: number | null;
   pnl_opened_during: number | null;
+  counterfactual?: EmbargoCf | null;
 }
 interface EmbargoUi {
   active: boolean;
@@ -47,6 +58,9 @@ interface EmbargoUi {
     n_bots_losing: number | null;
     per_bot: Record<string, number> | null;
   } | null;
+  counterfactual?: EmbargoCf | null;
+  cf_generated_at?: string | null;
+  cf_totals?: { n_windows: number; cf_pnl: number; actual_pnl: number; embargo_benefit: number; n_cf_trades: number } | null;
   history: EmbargoHistory[];
 }
 interface EmbargoPayload {
@@ -123,6 +137,13 @@ function dismissInactive() {
     /* ignore */
   }
 }
+const money = (v: number | null | undefined) => {
+  if (v === null || v === undefined) return '—';
+  const sign = v > 0 ? '+' : v < 0 ? '−' : '';
+  return `${sign}${Math.abs(v).toLocaleString('fa-IR', { maximumFractionDigits: 1 })}$`;
+};
+const cfBots = (cf: EmbargoCf | null | undefined) =>
+  cf ? Object.entries(cf.cf_by_bot).map(([b, v]) => `${b} ${money(v)}`).join(' · ') : '';
 const verdictFa = (v: string | null) =>
   v === 'stress_materialised'
     ? 'استرس رخ داد'
@@ -140,6 +161,11 @@ const verdictFa = (v: string | null) =>
           از <b>{{ fmt(ui.since) }}</b> تا <b>{{ fmt(ui.until) }}</b>
           <span v-if="remainingText">(⏳ {{ remainingText }} مانده)</span>
           <span v-if="ui.extensions"> · {{ fmtNum(ui.extensions, 0) }} بار تمدید</span>
+          <span v-if="ui.counterfactual" :title="cfBots(ui.counterfactual)">
+            · تا الان اگر embargo نبود: <b>{{ money(ui.counterfactual.cf_pnl) }}</b>
+            ({{ fmtNum(ui.counterfactual.n_cf_trades, 0) }} ورودِ وتوشده) در برابر واقعی
+            <b>{{ money(ui.counterfactual.actual_pnl) }}</b>
+          </span>
           <span v-if="ui.stale" class="font-semibold text-red-700 dark:text-red-300">
             · ⚠️ ارزیابِ ساعتی به‌روز نشده ({{ fmt(ui.last_checked) }})
           </span>
@@ -184,7 +210,9 @@ const verdictFa = (v: string | null) =>
                   <th class="text-start font-normal">تا</th>
                   <th class="text-start font-normal">حکم</th>
                   <th class="text-start font-normal">ترید در آن (کف)</th>
-                  <th class="text-start font-normal">سود آن‌ها</th>
+                  <th class="text-start font-normal">سود واقعی</th>
+                  <th class="text-start font-normal">اگر embargo نبود</th>
+                  <th class="text-start font-normal">سودِ embargo</th>
                 </tr>
               </thead>
               <tbody>
@@ -193,12 +221,48 @@ const verdictFa = (v: string | null) =>
                   <td>{{ fmt(h.until) }}</td>
                   <td>{{ verdictFa(h.verdict) }}</td>
                   <td>{{ fmtNum(h.trades_opened_during, 0) }} ({{ fmtNum(h.floor_trades_during, 0) }})</td>
-                  <td>{{ fmtNum(h.pnl_opened_during, 1) }}$</td>
+                  <td>{{ money(h.pnl_opened_during) }}</td>
+                  <td :title="cfBots(h.counterfactual)">
+                    {{ money(h.counterfactual?.cf_pnl) }}
+                    <span v-if="h.counterfactual" class="text-neutral-500">({{ fmtNum(h.counterfactual.n_cf_trades, 0) }})</span>
+                  </td>
+                  <td
+                    :class="(h.counterfactual?.embargo_benefit ?? 0) >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'"
+                  >
+                    {{ money(h.counterfactual?.embargo_benefit) }}
+                  </td>
+                </tr>
+                <tr v-if="ui.counterfactual" class="font-semibold">
+                  <td>{{ fmt(ui.since) }}</td>
+                  <td>فعال</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>{{ money(ui.counterfactual.actual_pnl) }}</td>
+                  <td :title="cfBots(ui.counterfactual)">
+                    {{ money(ui.counterfactual.cf_pnl) }}
+                    <span class="text-neutral-500">({{ fmtNum(ui.counterfactual.n_cf_trades, 0) }})</span>
+                  </td>
+                  <td :class="(ui.counterfactual.embargo_benefit ?? 0) >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'">
+                    {{ money(ui.counterfactual.embargo_benefit) }}
+                  </td>
+                </tr>
+                <tr v-if="ui.cf_totals" class="border-t border-amber-500/40 font-bold">
+                  <td colspan="4">جمع {{ fmtNum(ui.cf_totals.n_windows, 0) }} embargo</td>
+                  <td>{{ money(ui.cf_totals.actual_pnl) }}</td>
+                  <td>{{ money(ui.cf_totals.cf_pnl) }} <span class="text-neutral-500">({{ fmtNum(ui.cf_totals.n_cf_trades, 0) }})</span></td>
+                  <td :class="(ui.cf_totals.embargo_benefit ?? 0) >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'">
+                    {{ money(ui.cf_totals.embargo_benefit) }}
+                  </td>
                 </tr>
               </tbody>
             </table>
             <div class="mt-1 text-neutral-600 dark:text-neutral-400">
-              منبع: Quant_research/outputs/embargo_state.json (ارزیابی ساعتی در دقیقهٔ ۰۷) · انتشار برای UI هر ۵ دقیقه
+              «اگر embargo نبود» = بازپخشِ ورودهای وتوشده روی کندل‌های ۱۵ دقیقه (ورود در بستهٔ کندلِ سیگنال، استاپ ۰٫۷۵×نوسان روزانه، نگه‌داری = میانهٔ بات، کارمزد ۱۲bps).
+              «سودِ embargo» = واقعی − اگر‌نبود؛ سبز یعنی embargo پول نگه داشت.
+              <span v-if="ui.counterfactual && ui.counterfactual.uncovered_bots.length">
+                ⚠️ بدون پوشش (سیگنال ثبت‌نشده تا ۰۹-۰۴): {{ ui.counterfactual.uncovered_bots.join('، ') }}.
+              </span>
+              <br />منبع: outputs/embargo_state.json (ارزیابی ساعتی :۰۷) · counterfactual ساعتی :۱۲ · انتشار UI هر ۵ دقیقه
             </div>
           </div>
         </div>
