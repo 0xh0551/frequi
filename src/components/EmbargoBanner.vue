@@ -59,6 +59,10 @@ interface EmbargoUi {
     per_bot: Record<string, number> | null;
   } | null;
   counterfactual?: EmbargoCf | null;
+  mode?: string;
+  triggers_fa?: string[];
+  clean_checks?: number | null;
+  scope?: { v1: boolean; text_fa: string; groups: Record<string, string[]>; detail: Record<string, { mode: string; why: string; score: number; aftermath_new_pnl: number; n_new: number; carried_pnl: number; cf_vetoed_pnl: number }> } | null;
   cf_generated_at?: string | null;
   cf_totals?: { n_windows: number; cf_pnl: number; actual_pnl: number; embargo_benefit: number; n_cf_trades: number } | null;
   history: EmbargoHistory[];
@@ -153,7 +157,7 @@ const verdictFa = (v: string | null) =>
 </script>
 
 <template>
-  <div v-if="ui && ui.active" dir="rtl" class="w-full text-right">
+  <div v-if="ui && ui.active" dir="rtl" class="embargo-banner w-full text-right">
     <div class="border-b border-amber-500/60 bg-amber-100 text-amber-950 dark:bg-amber-950/60 dark:text-amber-100">
       <div class="mx-auto flex max-w-screen-2xl flex-wrap items-center gap-x-4 gap-y-1 px-3 py-1.5 text-sm">
         <span class="font-bold">🛑 {{ ui.headline_fa }}</span>
@@ -196,6 +200,31 @@ const verdictFa = (v: string | null) =>
               </li>
             </ul>
             <div class="mt-1 text-neutral-700 dark:text-neutral-300">{{ ui.effect_fa }}</div>
+            <div v-if="ui.scope && !ui.scope.v1" class="mt-2">
+              <div class="font-semibold">دامنه (از دادهٔ ۶۰ روز: PnL ورودهای جدید در پس‌لرزهٔ استرس + counterfactual)</div>
+              <table class="w-full">
+                <thead>
+                  <tr class="text-neutral-600 dark:text-neutral-400">
+                    <th class="text-start font-normal">بات</th>
+                    <th class="text-start font-normal">حکم</th>
+                    <th class="text-start font-normal">امتیاز</th>
+                    <th class="text-start font-normal">ورود جدید در پس‌لرزه</th>
+                    <th class="text-start font-normal">حمل‌شده</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(d, b) in ui.scope.detail" :key="b" :title="d.why">
+                    <td>{{ b }}</td>
+                    <td :class="d.mode === 'veto' ? 'text-red-700 dark:text-red-300' : d.mode === 'free' ? 'text-emerald-700 dark:text-emerald-300' : ''">
+                      {{ d.mode === 'veto' ? 'ورود بسته' : d.mode === 'half' ? 'نصف‌سایز' : 'آزاد' }}
+                    </td>
+                    <td>{{ money(d.score) }}</td>
+                    <td>{{ money(d.aftermath_new_pnl) }} <span class="text-neutral-500">({{ fmtNum(d.n_new, 0) }})</span></td>
+                    <td>{{ money(d.carried_pnl) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
             <div class="mt-1 text-neutral-600 dark:text-neutral-400">
               آخرین مطابقت: {{ fmt(ui.last_match) }} · آخرین ارزیابی: {{ fmt(ui.last_checked) }} ·
               TTL از آخرین مطابقت: {{ fmtNum(ui.ttl_h, 0) }} ساعت
@@ -272,10 +301,45 @@ const verdictFa = (v: string | null) =>
   <div
     v-else-if="showInactive"
     dir="rtl"
-    class="w-full border-b border-emerald-500/30 bg-emerald-50 px-3 py-0.5 text-right text-xs text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
+    class="embargo-banner w-full border-b border-emerald-500/30 bg-emerald-50 px-3 py-0.5 text-right text-xs text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
   >
     ✅ {{ ui?.headline_fa }} · آخرین ارزیابی {{ fmt(ui?.last_checked) }}
+    <span v-if="ui?.scope && !ui.scope.v1" class="text-neutral-600 dark:text-neutral-400">· دامنهٔ فعلی اگر فعال شود: {{ ui.scope.text_fa }}</span>
     <span v-if="ui?.stale" class="font-semibold text-red-700 dark:text-red-300">· ⚠️ ارزیابِ ساعتی به‌روز نشده</span>
     <button class="ms-3 underline" type="button" @click="dismissInactive">پنهان</button>
   </div>
 </template>
+
+<style scoped>
+/* مالک 2026-09-04: «فونتش وزیر متن نازک» — Vazir Light (300) برای متن، Regular برای تأکیدها */
+@font-face {
+  font-family: 'Vazir';
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  src: url('@/assets/fonts/Vazir-Thin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Vazir';
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  src: url('@/assets/fonts/Vazir-Light.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Vazir';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('@/assets/fonts/Vazir-Regular.woff2') format('woff2');
+}
+.embargo-banner {
+  font-family: 'Vazir', 'Vazirmatn', Tahoma, sans-serif;
+  font-weight: 300;
+}
+.embargo-banner b,
+.embargo-banner .font-bold,
+.embargo-banner .font-semibold {
+  font-weight: 400;
+}
+</style>
