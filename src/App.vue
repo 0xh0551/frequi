@@ -18,6 +18,7 @@ watch(
   <UApp>
     <div id="app" class="flex flex-col h-dvh" :style="colorStore.cssVars">
       <NavBar />
+      <EmbargoBanner />
       <BodyLayout class="grow overflow-auto" />
       <NavFooter />
     </div>
