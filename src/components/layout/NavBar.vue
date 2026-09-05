@@ -142,6 +142,15 @@ const navItems = computed<NavItem[]>(() => [
     icon: 'i-mdi-graph-outline',
   },
   {
+    // noches 2026-09-05: «مواجههٔ بات با بازار» — per-bot state-log report (time under water,
+    // stop proximity, ratchet on the real path, exposure/heat), built from /bot_state_report.json.
+    label: 'State',
+    to: `/bot_state.html?bot=${encodeURIComponent(botStore.activeBot?.botName || '')}`,
+    external: true,
+    target: '_blank',
+    icon: 'i-mdi-heart-pulse',
+  },
+  {
     label: 'Settings',
     to: '/settings',
     mobileOnly: true,
