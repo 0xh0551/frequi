@@ -133,6 +133,15 @@ const navItems = computed<NavItem[]>(() => [
     icon: 'i-mdi-chart-scatter-plot',
   },
   {
+    // noches 2026-09-05: نقشهٔ سه‌بعدی ناوگان (static file in frequi-dist, published by fleet-ops).
+    // Opens on the active bot's own sub-map; the page itself lets you switch bots.
+    label: 'Map',
+    to: `/fleet_mindmap.html?bot=${encodeURIComponent(botStore.activeBot?.botName || '')}`,
+    external: true,
+    target: '_blank',
+    icon: 'i-mdi-graph-outline',
+  },
+  {
     label: 'Settings',
     to: '/settings',
     mobileOnly: true,
