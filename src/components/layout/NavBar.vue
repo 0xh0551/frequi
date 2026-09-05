@@ -135,19 +135,17 @@ const navItems = computed<NavItem[]>(() => [
   {
     // noches 2026-09-05: نقشهٔ سه‌بعدی ناوگان (static file in frequi-dist, published by fleet-ops).
     // Opens on the active bot's own sub-map; the page itself lets you switch bots.
+    // Internal routes (src/pages/map.vue, state.vue) that embed the static pages in an
+    // iframe, so they open under the FreqUI header like every other tab (owner 2026-09-05).
     label: 'Map',
-    to: `/fleet_mindmap.html?bot=${encodeURIComponent(botStore.activeBot?.botName || '')}`,
-    external: true,
-    target: '_blank',
+    to: '/map',
     icon: 'i-mdi-graph-outline',
   },
   {
-    // noches 2026-09-05: «مواجههٔ بات با بازار» — per-bot state-log report (time under water,
-    // stop proximity, ratchet on the real path, exposure/heat), built from /bot_state_report.json.
+    // «مواجههٔ بات با بازار» — per-bot state-log report (time under water, stop proximity,
+    // ratchet on the real path, exposure/heat), built from /bot_state_report.json.
     label: 'State',
-    to: `/bot_state.html?bot=${encodeURIComponent(botStore.activeBot?.botName || '')}`,
-    external: true,
-    target: '_blank',
+    to: '/state',
     icon: 'i-mdi-heart-pulse',
   },
   {
